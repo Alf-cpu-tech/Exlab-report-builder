@@ -18,7 +18,7 @@ def outlier_handling(df, column_with_outliers):
     return df
 
 
-pd.set_option("display.max_rows", None)
+pd.set_option("display.max_rows", 30)
 pd.set_option("display.max_columns", 6)
 #calling the function and passing the
 cleanData = outlier_handling(dirtyData, "V'O2")
