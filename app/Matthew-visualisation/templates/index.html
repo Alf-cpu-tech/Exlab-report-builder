@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html>
+<link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+<head>
+    <title>Breathing Data Viewer</title>
+</head>
+<body>
+
+<div class="chart-wrapper">
+    <h1>Breathing Data Viewer</h1>
+    <h2>Select your data</h2>
+
+    <div class="data-selector">
+
+    <div class="metric-select">
+        <label for="metric">Metric:</label>
+        <form method="get">
+            <select name="metric" id="metric" onchange="this.form.submit()">
+                {% for m in metrics %}
+                    <option value="{{ m }}" {% if m == selected %}selected{% endif %}>
+                        {{ m }}
+                    </option>
+                {% endfor %}
+            </select>
+        </form>
+    </div>
+
+    <div class="chart-container">
+    {{ svg|safe }}
+    </div>
+    
+
+</div>
+
+<script>
+document.addEventListener("DOMContentLoaded", () => {
+    const chart = document.querySelector(".chart-container");
+    if (!chart) return;
+
+    // Reset state
+    chart.classList.remove("visible");
+
+    // Force a reflow so the browser sees the "before" state
+    void chart.offsetWidth;
+
+    // Then trigger the transition
+    chart.classList.add("visible");
+});
+</script>
+</body>
+</html>
