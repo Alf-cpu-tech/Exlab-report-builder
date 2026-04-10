@@ -1,0 +1,172 @@
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  background: #ffffff;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  color: #1a1a1a;
+}
+
+/* Header */
+header {
+  width: 100%;
+  background: #ffffff;
+  border-bottom: 1px solid #e2e8f0;
+  padding: 0.75rem 2rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  position: sticky;
+  top: 0;
+  z-index: 100;
+}
+
+header .site-name {
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: #1a1a1a;
+  text-decoration: none;
+}
+
+header nav {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+header nav a {
+  font-size: 0.9rem;
+  color: #3182ce;
+  text-decoration: none;
+  font-weight: 600;
+}
+
+header nav a:hover { text-decoration: underline; }
+
+.btn-logout {
+  padding: 0.4rem 1rem;
+  background: #e53e3e;
+  color: #ffffff;
+  border: none;
+  border-radius: 6px;
+  font-size: 0.875rem;
+  font-weight: 700;
+  cursor: pointer;
+  text-decoration: none;
+  transition: opacity 0.2s;
+}
+
+.btn-logout:hover { opacity: 0.85; text-decoration: none; }
+
+.main-content {
+  width: 100%;
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.card {
+  width: 100%;
+  max-width: 420px;
+  padding: 2.5rem 2rem;
+}
+
+h1 {
+  font-size: 1.8rem;
+  font-weight: 700;
+  margin-bottom: 1.5rem;
+  text-align: center;
+  color: #1a1a1a;
+}
+
+label {
+  display: block;
+  font-size: 0.85rem;
+  font-weight: 600;
+  margin-bottom: 0.35rem;
+  color: #555555;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+input[type="text"],
+input[type="password"] {
+  width: 100%;
+  padding: 0.75rem 1rem;
+  border-radius: 6px;
+  border: 1px solid #cccccc;
+  background: #ffffff;
+  color: #1a1a1a;
+  font-size: 1rem;
+  outline: none;
+  transition: border-color 0.2s;
+  margin-bottom: 1.2rem;
+}
+
+input[type="text"]:focus,
+input[type="password"]:focus {
+  border-color: #3182ce;
+}
+
+.btn {
+  display: block;
+  width: 100%;
+  padding: 0.85rem;
+  border: none;
+  border-radius: 6px;
+  font-size: 1rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: opacity 0.2s, transform 0.1s;
+  letter-spacing: 0.03em;
+}
+
+.btn:hover  { opacity: 0.88; }
+.btn:active { transform: scale(0.98); }
+
+.btn-primary {
+  background: #3182ce;
+  color: #ffffff;
+}
+
+.btn-danger {
+  background: #e53e3e;
+  color: #ffffff;
+}
+
+.link-row {
+  text-align: center;
+  margin-top: 1.2rem;
+  font-size: 0.9rem;
+  color: #555555;
+}
+
+.link-row a {
+  color: #3182ce;
+  text-decoration: none;
+  font-weight: 600;
+}
+
+.link-row a:hover { text-decoration: underline; }
+
+/* Flash messages */
+.flashes {
+  list-style: none;
+  margin-bottom: 1.2rem;
+}
+
+.flashes li {
+  padding: 0.7rem 1rem;
+  border-radius: 6px;
+  font-size: 0.9rem;
+  margin-bottom: 0.5rem;
+}
+
+.flashes li.success { background: #f0fff4; border: 1px solid #68d391; color: #276749; }
+.flashes li.danger  { background: #fff5f5; border: 1px solid #fc8181; color: #c53030; }
+.flashes li.warning { background: #fffaf0; border: 1px solid #f6ad55; color: #c05621; }
+.flashes li.info    { background: #ebf8ff; border: 1px solid #63b3ed; color: #2b6cb0; }
