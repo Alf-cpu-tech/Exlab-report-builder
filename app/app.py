@@ -127,8 +127,6 @@ def logout():
     flash('You have been logged out.', 'info')
     return redirect(url_for('login'))
 
-# NEW ROUTES - UPLOAD -> DATASET -> PROCESSED JSON
-
 @app.route('/upload', methods=['GET', 'POST'])
 def upload():
     if 'user_id' not in session:
@@ -163,6 +161,7 @@ def upload():
     )
     db.session.add(dataset)
     db.session.commit()
+    return redirect(url_for('upload_success'))
 
     # Convert to JSON
     try:
@@ -186,10 +185,12 @@ def upload():
         dataset_id=dataset.id,
         processed_id=processed.id
     )
+@app.route('/upload/success')
+def upload_success():
+    return render_template('upload_success.html')
 
-# -------------------------------------------------------
+
 # MAIN
-# -------------------------------------------------------
 
 if __name__ == '__main__':
     app.run(debug=True)
