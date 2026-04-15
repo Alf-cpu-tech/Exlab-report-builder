@@ -5,6 +5,10 @@ from werkzeug.utils import secure_filename
 import os
 import uuid
 import pandas as pd
+import json
+import matplotlib.pyplot as plt
+import io
+# Additionally requires openpyxl, figure that out for when the server is a thing
 
 # APP CONFIG
 
@@ -13,7 +17,6 @@ app.config['SECRET_KEY'] = os.urandom(24)
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///exlab.db'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
-# File upload config
 UPLOAD_FOLDER = os.path.join(os.path.dirname(__file__), 'uploads')
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 ALLOWED_EXTENSIONS = {'xls', 'xlsx', 'csv'}
@@ -58,7 +61,70 @@ with app.app_context():
 def allowed_file(name):
     return "." in name and name.rsplit(".", 1)[1].lower() in ALLOWED_EXTENSIONS
 
-# ROUTES - AUTH
+def time_to_seconds(t):
+    """Convert time value to seconds."""
+
+    # Handle formats
+    if t is None or pd.isna(t):
+        return None
+
+    # If numeric (seconds), return as float/int
+    if isinstance(t, (int, float)):
+        return float(t)
+
+    # Convert pandas Timestamp to str
+    if not isinstance(t, str):
+        t = str(t)
+
+    # Normalise '0 days 00:01:05'
+    if "days" in t:
+        t = t.split("days")[-1].strip()
+
+    # Clean
+    t = t.strip()
+
+    try:
+        h, m, s = t.split(":")
+        return int(h)*3600 + int(m)*60 + float(s)
+    except Exception:
+        # If invalid time, return None instead of error
+        return None
+
+def read_any_spreadsheet(path):
+    ext = path.split(".")[-1].lower()
+
+    try:
+        if ext == "csv":
+            return pd.read_csv(path)
+        else:
+            return pd.read_excel(path, engine="openpyxl")
+    except Exception as e:
+        raise RuntimeError(f"Failed to read file '{path}': {e}")
+
+def process_dataset(path, dataset_id):
+    """Convert uploaded raw spreadsheet into many JSON rows."""
+    df = read_any_spreadsheet(path)
+
+    # Add Logging
+    print("\nRAW HEAD")
+    print(df.head())
+    print("========\n")
+
+    if "t" in df.columns:
+        df["t_seconds"] = df["t"].apply(time_to_seconds)
+        # Drop col if crashing
+        if df["t_seconds"].isna().all():
+            df.drop(columns=["t_seconds"], inplace=True)
+
+    # Store EACH row as JSON
+    for _, row in df.iterrows():
+        blob = json.dumps(row.to_dict())
+        entry = Processed(dataset_id=dataset_id, json_data=blob)
+        db.session.add(entry)
+
+    db.session.commit()
+
+# ROUTES
 
 @app.route('/')
 def index():
@@ -130,7 +196,7 @@ def logout():
 @app.route('/upload', methods=['GET', 'POST'])
 def upload():
     if 'user_id' not in session:
-        flash("You must be logged in to upload.", "warning")
+        flash("You must be logged in.", "warning")
         return redirect(url_for("login"))
 
     if request.method == 'GET':
@@ -143,51 +209,107 @@ def upload():
         return redirect(url_for("upload"))
 
     if not allowed_file(file.filename):
-        flash("Invalid file type. Use .xls/.xlsx/.csv", "danger")
+        flash("Invalid file type (use CSV / XLS / XLSX)", "danger")
         return redirect(url_for("upload"))
 
-    # Save uploaded file
-    original_filename = secure_filename(file.filename)
-    generated_name = f"{uuid.uuid4()}.xlsx"
-    filepath = os.path.join(app.config['UPLOAD_FOLDER'], generated_name)
-    file.save(filepath)
+    original = secure_filename(file.filename)
+    newname = f"{uuid.uuid4()}.{original.split('.')[-1]}"
+    path = os.path.join(app.config['UPLOAD_FOLDER'], newname)
+    file.save(path)
 
-    # Insert into dataset table
+    # Create Dataset entry
     dataset = Dataset(
         user_id=session['user_id'],
-        filename=original_filename,
+        filename=original,
         status="uploaded",
         metadata_=None
     )
     db.session.add(dataset)
     db.session.commit()
-    return redirect(url_for('upload_success'))
 
-    # Convert to JSON
+    # Insert many JSON rows
     try:
-        df = pd.read_excel(filepath)
-        json_data = df.to_json(orient="records")
+        process_dataset(path, dataset.id)
     except Exception as e:
-        flash(f"Error processing spreadsheet: {e}", "danger")
+        flash(f"Error processing file: {e}", "danger")
         return redirect(url_for("upload"))
 
-    # Insert JSON into processed table
-    processed = Processed(
-        dataset_id=dataset.id,
-        json_data=json_data
-    )
-    db.session.add(processed)
-    db.session.commit()
+    return redirect(url_for('upload_success'))
 
-    return render_template(
-        "success.html",
-        filename=original_filename,
-        dataset_id=dataset.id,
-        processed_id=processed.id
-    )
 @app.route('/upload/success')
 def upload_success():
     return render_template('upload_success.html')
+
+# Dataset List
+
+@app.route('/datasets')
+def datasets():
+    if 'user_id' not in session:
+        return redirect(url_for('login'))
+
+    user_datasets = Dataset.query.filter_by(user_id=session['user_id']).all()
+    return render_template('datasets.html', datasets=user_datasets)
+
+#Chart Viewer
+
+@app.route('/chart/<int:dataset_id>')
+def chart(dataset_id):
+    if 'user_id' not in session:
+        return redirect(url_for('login'))
+
+    raw = Processed.query.filter_by(dataset_id=dataset_id).all()
+    if not raw:
+        return "No processed data found", 404
+
+    # Decode all JSON rows
+    decoded = [json.loads(r.json_data) for r in raw]
+    df = pd.DataFrame(decoded)
+
+    # List numeric fields
+    numeric = df.select_dtypes(include='number').columns.tolist()
+    if not numeric:
+        return "No numeric data to plot", 400
+
+    metric = request.args.get("metric", numeric[0])
+
+    if metric not in numeric:
+        metric = numeric[0]
+
+    # X-axis
+    if "t_seconds" in df.columns:
+        x = df["t_seconds"]
+    else:
+        x = df.index
+
+    # Make chart
+    fig, ax = plt.subplots(figsize=(8, 4))
+
+    # Compatibility with CSS
+    line, = ax.plot(x, df[metric], marker='o')
+    line.set_gid("mpl-line")
+    line.set_markerfacecolor("none")
+    ax.grid(color="#e0e0e0")
+    for spine in ax.spines.values():
+        spine.set_color("#000000")
+        spine.set_linewidth(1)
+
+    # Titles, labels
+    ax.set_title(f"{metric} over time")
+    ax.set_xlabel("Time")
+    ax.set_ylabel(metric)
+
+    # Save SVG to memory instead of to file (Tell Matthew at some point(optional))
+    buf = io.StringIO()
+    fig.savefig(buf, format="svg")
+    svg = buf.getvalue()
+
+    return render_template(
+        "chart.html",
+        svg=svg,
+        metrics=numeric,
+        selected=metric,
+        dataset_id=dataset_id
+    )
 
 
 # MAIN

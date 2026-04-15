@@ -170,3 +170,90 @@ input[type="password"]:focus {
 .flashes li.danger  { background: #fff5f5; border: 1px solid #fc8181; color: #c53030; }
 .flashes li.warning { background: #fffaf0; border: 1px solid #f6ad55; color: #c05621; }
 .flashes li.info    { background: #ebf8ff; border: 1px solid #63b3ed; color: #2b6cb0; }
+
+/* --- Chart stuff --- */
+/* --- Layout & Container --- */
+.chart-wrapper {
+  max-width: 700px;
+  margin: 2rem auto;
+  padding: 1.5rem;
+  background: #ffffff;
+  border-radius: 12px;
+  box-shadow: 0 4px 16px rgba(0,0,0,0.08);
+  font-family: "Inter", "Segoe UI", sans-serif;
+}
+
+/* --- Titles --- */
+.chart-wrapper h2 {
+  margin: 0 0 0.5rem;
+  font-size: 1.4rem;
+  font-weight: 600;
+  color: #333;
+}
+
+/* --- Dropdown Styling --- */
+.metric-select {
+  margin-bottom: 1rem;
+}
+
+.metric-select label {
+  font-size: 0.9rem;
+  font-weight: 500;
+  margin-right: 0.5rem;
+}
+
+.metric-select select {
+  padding: 0.4rem 0.6rem;
+  border-radius: 6px;
+  border: 1px solid #ccc;
+  font-size: 0.9rem;
+  background: #f9f9f9;
+  transition: border-color 0.2s;
+}
+
+.metric-select select:focus {
+  border-color: #999;
+  outline: none;
+}
+
+/* --- Smooth Fade-In Animation for Chart --- */
+.chart-container {
+  opacity: 0;
+  transform: translateY(20px);
+  transition: opacity 0.6s ease, transform 0.6s ease;
+}
+
+.chart-container.visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* --- SVG Styling --- */
+svg {
+  width: 100%;
+  height: auto;
+}
+
+/* --- Softer, transparent gridlines (covers both <line> and <path>) --- */
+svg line,
+svg path[stroke="#e0e0e0"],
+svg path[stroke="#cccccc"] {
+  stroke: #e0e0e0 !important;
+  stroke-width: 1px !important;
+  opacity: 0.25 !important;
+}
+
+/* --- Softer axes --- */
+svg path[stroke="#000000"] {
+  stroke: #21cf7e !important;
+  stroke-width: 1px !important;
+}
+
+
+svg .line,
+svg .mpl-line {
+  stroke: #37c51a !important;   
+  stroke-width: 3px !important;
+  fill: none !important;
+  opacity: 1 !important;
+}
