@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Chart</title>
+</head>
+<body>
+
+<h2>Dataset Chart</h2>
+
+<form method="GET">
+    <label>Select Metric:</label>
+    <select name="metric">
+        {% for m in metrics %}
+            <option value="{{ m }}" {% if m == selected %}selected{% endif %}>
+                {{ m }}
+            </option>
+        {% endfor %}
+    </select>
+    <button type="submit">Update</button>
+</form>
+
+<hr>
+
+<div>
+    {{ svg|safe }}
+</div>
+
+<br>
+<a href="{{ url_for('datasets') }}">Back to datasets</a>
+
+</body>
+</html>

@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Your Datasets</title>
+</head>
+<body>
+
+<h2>Your Uploaded Datasets</h2>
+
+<ul>
+{% for d in datasets %}
+    <li>
+        {{ d.filename }} ({{ d.status }})
+        <a href="{{ url_for('chart', dataset_id=d.id) }}">View Chart</a>
+    </li>
+{% else %}
+    <li>No datasets uploaded yet.</li>
+{% endfor %}
+</ul>
+
+<a href="{{ url_for('upload') }}">Upload another dataset</a>
+
+</body>
+</html>
