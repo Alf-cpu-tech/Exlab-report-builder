@@ -12,6 +12,10 @@
     <nav>
       {% if session.get('user_id') %}
         <span style="font-size:0.9rem; color:#555;">Hello, <strong>{{ session['username'] }}</strong></span>
+        <a href="{{ url_for('welcome') }}">Dashboard</a>
+        <a href="{{ url_for('upload') }}">Upload</a>
+        <a href="{{ url_for('datasets') }}">Analysis</a>
+        <a href="{{ url_for('report') }}">Reports</a>
         <a href="{{ url_for('logout') }}" class="btn-logout">Log Out</a>
       {% else %}
         <a href="{{ url_for('login') }}">Login</a>
@@ -20,8 +24,8 @@
     </nav>
   </header>
 
-  <div class="main-content">
-  <div class="card">
+  <div class="main-content {% block main_content_class %}{% endblock %}">
+  <div class="card {% block card_class %}{% endblock %}">
     {% with messages = get_flashed_messages(with_categories=true) %}
       {% if messages %}
         <ul class="flashes">

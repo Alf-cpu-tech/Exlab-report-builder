@@ -1,0 +1,47 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard{% endblock %}
+
+{% block main_content_class %}report-main-content{% endblock %}
+{% block card_class %}report-card{% endblock %}
+
+{% block content %}
+<div class="report-page">
+
+  <!-- Left Sidebar -->
+  <aside class="report-sidebar">
+    <a href="{{ url_for('upload') }}" class="sidebar-link">Upload</a>
+    <a href="{{ url_for('datasets') }}" class="sidebar-link">Analysis</a>
+    <a href="{{ url_for('report') }}" class="sidebar-link">Report</a>
+  </aside>
+
+  <!-- Main Content -->
+  <main class="report-content">
+    <h1 class="report-page-title">Dashboard</h1>
+    <p style="color:#555; margin-bottom:2rem;">Welcome back, <strong>{{ username }}</strong>.</p>
+
+    <div class="dashboard-grid">
+
+      <a href="{{ url_for('upload') }}" class="dashboard-card">
+        <div class="dashboard-card-icon">&#8679;</div>
+        <h3>Upload</h3>
+        <p>Add a new exercise data file (CSV / XLS / XLSX) to begin.</p>
+      </a>
+
+      <a href="{{ url_for('datasets') }}" class="dashboard-card">
+        <div class="dashboard-card-icon">&#9783;</div>
+        <h3>Analysis</h3>
+        <p>View and explore your uploaded datasets and charts.</p>
+      </a>
+
+      <a href="{{ url_for('report') }}" class="dashboard-card">
+        <div class="dashboard-card-icon">&#9632;</div>
+        <h3>Reports</h3>
+        <p>Build, preview, and export PDF reports from your data.</p>
+      </a>
+
+    </div>
+  </main>
+
+</div>
+{% endblock %}

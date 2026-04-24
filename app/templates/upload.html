@@ -1,22 +1,83 @@
-<!DOCTYPE html>
-<html>
-<head>
-    <title>Upload Dataset</title>
-</head>
-<body>
-{% with messages = get_flashed_messages(with_categories=true) %}
-    {% if messages %}
-        {% for cat, msg in messages %}
-            <div class="alert alert-{{ cat }}">{{ msg }}</div>
-        {% endfor %}
-    {% endif %}
-{% endwith %}
-<h1>Upload Spreadsheet</h1>
+{% extends "base.html" %}
 
-<form action="{{ url_for('upload') }}" method="POST" enctype="multipart/form-data">
-    <input type="file" name="file" required>
-    <button type="submit">Upload</button>
-</form>
+{% block title %}Upload{% endblock %}
 
-</body>
-</html>
+{% block main_content_class %}report-main-content{% endblock %}
+{% block card_class %}report-card{% endblock %}
+
+{% block content %}
+<div class="report-page">
+
+  <!-- Left Sidebar -->
+  <aside class="report-sidebar">
+    <a href="{{ url_for('upload') }}" class="sidebar-link active">Upload</a>
+    <a href="{{ url_for('datasets') }}" class="sidebar-link">Analysis</a>
+    <a href="{{ url_for('report') }}" class="sidebar-link">Report</a>
+  </aside>
+
+  <!-- Main Content -->
+  <main class="report-content">
+    <h1 class="report-page-title">Upload Page</h1>
+
+    <div class="upload-body">
+
+      <!-- Centre: drop zone + form -->
+      <section class="upload-form-panel">
+        <h2 class="panel-title">Upload Exercise Data</h2>
+
+        <form id="upload-form" action="{{ url_for('upload') }}" method="POST" enctype="multipart/form-data">
+          <div class="drop-zone" id="drop-zone">
+            <p class="drop-zone-heading">Drag &amp; Drop File</p>
+            <p class="drop-zone-sub">or browse to upload</p>
+            <label class="btn btn-file-choose">
+              Choose File
+              <input type="file" name="file" id="file-input" accept=".csv,.xls,.xlsx" required>
+            </label>
+          </div>
+
+          <p class="upload-hint">Upload a CSV or Excel exercise data file to begin analysis.</p>
+
+          <button type="submit" class="btn btn-upload-continue">Continue</button>
+        </form>
+      </section>
+
+      <!-- Right: Simple Status -->
+      <aside class="upload-status-panel panel-box">
+        <h3 class="panel-box-title">Simple Status</h3>
+
+        <p class="status-key">Current file:</p>
+        <p class="status-val" id="status-filename">None selected</p>
+
+        <p class="status-key">Accepted format:</p>
+        <p class="status-val">CSV, XLS, XLSX</p>
+
+        <p class="status-key">Next step:</p>
+        <p class="status-val">Go to analysis page</p>
+      </aside>
+
+    </div>
+  </main>
+
+</div>
+
+<script>
+  const input = document.getElementById('file-input');
+  const dropZone = document.getElementById('drop-zone');
+  const fileLabel = document.getElementById('status-filename');
+
+  input.addEventListener('change', () => {
+    fileLabel.textContent = input.files[0] ? input.files[0].name : 'None selected';
+  });
+
+  dropZone.addEventListener('dragover', e => { e.preventDefault(); dropZone.classList.add('drop-zone--over'); });
+  dropZone.addEventListener('dragleave', () => dropZone.classList.remove('drop-zone--over'));
+  dropZone.addEventListener('drop', e => {
+    e.preventDefault();
+    dropZone.classList.remove('drop-zone--over');
+    if (e.dataTransfer.files.length) {
+      input.files = e.dataTransfer.files;
+      fileLabel.textContent = e.dataTransfer.files[0].name;
+    }
+  });
+</script>
+{% endblock %}

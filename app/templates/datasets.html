@@ -1,24 +1,46 @@
-<!DOCTYPE html>
-<html>
-<head>
-    <title>Your Datasets</title>
-</head>
-<body>
+{% extends "base.html" %}
 
-<h2>Your Uploaded Datasets</h2>
+{% block title %}Analysis{% endblock %}
 
-<ul>
-{% for d in datasets %}
-    <li>
-        {{ d.filename }} ({{ d.status }})
-        <a href="{{ url_for('chart', dataset_id=d.id) }}">View Chart</a>
-    </li>
-{% else %}
-    <li>No datasets uploaded yet.</li>
-{% endfor %}
-</ul>
+{% block main_content_class %}report-main-content{% endblock %}
+{% block card_class %}report-card{% endblock %}
 
-<a href="{{ url_for('upload') }}">Upload another dataset</a>
+{% block content %}
+<div class="report-page">
 
-</body>
-</html>
+  <!-- Left Sidebar -->
+  <aside class="report-sidebar">
+    <a href="{{ url_for('upload') }}" class="sidebar-link">Upload</a>
+    <a href="{{ url_for('datasets') }}" class="sidebar-link active">Analysis</a>
+    <a href="{{ url_for('report') }}" class="sidebar-link">Report</a>
+  </aside>
+
+  <!-- Main Content -->
+  <main class="report-content">
+    <h1 class="report-page-title">Analysis</h1>
+
+    <div class="analysis-panel" style="max-width:680px;">
+      <h2 class="panel-title">Select a Dataset to Analyse</h2>
+
+      {% if datasets %}
+        <ul class="dataset-list">
+          {% for d in datasets %}
+            <li class="dataset-list-item">
+              <div class="dataset-info">
+                <span class="dataset-name">{{ d.filename }}</span>
+                <span class="dataset-status">{{ d.status }}</span>
+              </div>
+              <a href="{{ url_for('chart', dataset_id=d.id) }}" class="btn btn-report-action dataset-analyse-btn">Analyse</a>
+            </li>
+          {% endfor %}
+        </ul>
+      {% else %}
+        <p style="color:#777; font-size:0.9rem;">No datasets uploaded yet.
+          <a href="{{ url_for('upload') }}" style="color:#3182ce;">Upload one now.</a>
+        </p>
+      {% endif %}
+    </div>
+  </main>
+
+</div>
+{% endblock %}

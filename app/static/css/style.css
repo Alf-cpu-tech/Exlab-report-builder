@@ -257,3 +257,586 @@ svg .mpl-line {
   fill: none !important;
   opacity: 1 !important;
 }
+
+/* =============================================
+   Report Page
+   ============================================= */
+
+/* Override the base .main-content / .card constraints */
+.report-main-content {
+  align-items: flex-start;
+  justify-content: flex-start;
+}
+
+.report-card {
+  max-width: none;
+  width: 100%;
+  padding: 0;
+}
+
+/* Top-level flex: sidebar + main */
+.report-page {
+  display: flex;
+  width: 100%;
+  min-height: calc(100vh - 56px);
+}
+
+/* ---- Sidebar ---- */
+.report-sidebar {
+  width: 180px;
+  flex-shrink: 0;
+  border-right: 1px solid #e2e8f0;
+  padding: 2rem 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.sidebar-link {
+  display: block;
+  padding: 0.65rem 1rem;
+  border-radius: 6px;
+  font-size: 0.9rem;
+  font-weight: 500;
+  color: #444;
+  text-decoration: none;
+  transition: background 0.15s, color 0.15s;
+}
+
+.sidebar-link:hover {
+  background: #f1f5f9;
+  color: #1a1a1a;
+}
+
+.sidebar-link.active {
+  background: #e2e8f0;
+  color: #1a1a1a;
+  font-weight: 700;
+  border: 1px solid #cbd5e0;
+}
+
+/* ---- Main content ---- */
+.report-content {
+  flex: 1;
+  padding: 2rem;
+  min-width: 0;
+}
+
+.report-page-title {
+  font-size: 1.6rem;
+  font-weight: 700;
+  margin-bottom: 1.5rem;
+  text-align: left;
+}
+
+/* ---- Report body: preview panel + right panel ---- */
+.report-body {
+  display: flex;
+  gap: 1.5rem;
+  align-items: flex-start;
+}
+
+/* ---- Left: Report Preview Panel ---- */
+.report-preview-panel {
+  flex: 1.6;
+  border: 1px solid #cbd5e0;
+  border-radius: 8px;
+  padding: 1.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  min-width: 0;
+}
+
+.panel-title {
+  font-size: 1.15rem;
+  font-weight: 700;
+  margin-bottom: 0.25rem;
+}
+
+.preview-summary-box,
+.preview-threshold-box {
+  border: 1px solid #cbd5e0;
+  border-radius: 6px;
+  padding: 0.75rem 1rem;
+  font-size: 0.9rem;
+  color: #555;
+  background: #f9fafb;
+}
+
+.preview-graph-box {
+  border: 1px solid #cbd5e0;
+  border-radius: 6px;
+  min-height: 220px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #f9fafb;
+  font-size: 1rem;
+  font-weight: 600;
+  color: #888;
+}
+
+/* ---- Right panel ---- */
+.report-right-panel {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  min-width: 0;
+}
+
+/* Shared panel box */
+.panel-box {
+  border: 1px solid #cbd5e0;
+  border-radius: 8px;
+  padding: 1rem 1.25rem;
+}
+
+.panel-box-title {
+  font-size: 1rem;
+  font-weight: 700;
+  margin-bottom: 0.75rem;
+}
+
+/* Notes textarea */
+.notes-textarea {
+  width: 100%;
+  min-height: 100px;
+  resize: vertical;
+  border: 1px solid #cbd5e0;
+  border-radius: 6px;
+  padding: 0.6rem 0.75rem;
+  font-size: 0.875rem;
+  font-family: inherit;
+  color: #444;
+  background: #fff;
+  outline: none;
+  transition: border-color 0.2s;
+}
+
+.notes-textarea:focus {
+  border-color: #3182ce;
+}
+
+/* Review status checkboxes */
+.status-label {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.9rem;
+  color: #444;
+  margin-bottom: 0.4rem;
+  cursor: pointer;
+}
+
+.status-strikethrough {
+  text-decoration: line-through;
+  color: #aaa;
+}
+
+/* Action buttons row */
+.report-actions {
+  display: flex;
+  gap: 0.75rem;
+}
+
+.btn-report-action {
+  flex: 1;
+  padding: 0.7rem 0.5rem;
+  border: 1px solid #cbd5e0;
+  border-radius: 6px;
+  background: #fff;
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: #1a1a1a;
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s;
+}
+
+.btn-report-action:hover {
+  background: #f1f5f9;
+  border-color: #94a3b8;
+}
+
+/* Final output box */
+.final-output-box {}
+
+.final-output-text {
+  font-size: 0.875rem;
+  color: #555;
+}
+
+.report-dataset-picker {
+  margin-bottom: 1.25rem;
+}
+
+.report-stats-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.85rem;
+}
+
+.report-stats-table th {
+  text-align: left;
+  font-weight: 700;
+  padding: 0.3rem 0.5rem;
+  border-bottom: 1px solid #cbd5e0;
+  color: #444;
+}
+
+.report-stats-table td {
+  padding: 0.3rem 0.5rem;
+  color: #555;
+  border-bottom: 1px solid #f0f0f0;
+}
+
+.report-stats-table tr:last-child td {
+  border-bottom: none;
+}
+
+button[disabled].btn-report-action {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+
+   /* Upload Page */
+
+.upload-body {
+  display: flex;
+  gap: 1.5rem;
+  align-items: flex-start;
+}
+
+/* Centre panel */
+.upload-form-panel {
+  flex: 1.8;
+  border: 1px solid #cbd5e0;
+  border-radius: 8px;
+  padding: 1.5rem;
+  min-width: 0;
+}
+
+/* Dashed drop zone */
+.drop-zone {
+  border: 2px dashed #94a3b8;
+  border-radius: 8px;
+  padding: 2.5rem 1.5rem;
+  text-align: center;
+  margin-bottom: 1.25rem;
+  transition: background 0.15s, border-color 0.15s;
+}
+
+.drop-zone--over {
+  background: #f0f7ff;
+  border-color: #3182ce;
+}
+
+.drop-zone-heading {
+  font-size: 1.05rem;
+  font-weight: 700;
+  margin-bottom: 0.4rem;
+  color: #1a1a1a;
+}
+
+.drop-zone-sub {
+  font-size: 0.9rem;
+  color: #777;
+  margin-bottom: 1rem;
+}
+
+/* "Choose File" styled as button; hides the raw input */
+.btn-file-choose {
+  display: inline-block;
+  padding: 0.55rem 1.4rem;
+  border: 1px solid #cbd5e0;
+  border-radius: 6px;
+  background: #fff;
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: #1a1a1a;
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s;
+}
+
+.btn-file-choose:hover {
+  background: #f1f5f9;
+  border-color: #94a3b8;
+}
+
+.btn-file-choose input[type="file"] {
+  display: none;
+}
+
+.upload-hint {
+  font-size: 0.9rem;
+  color: #555;
+  margin-bottom: 1.25rem;
+}
+
+.btn-upload-continue {
+  padding: 0.7rem 2rem;
+  border: 1px solid #cbd5e0;
+  border-radius: 6px;
+  background: #fff;
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: #1a1a1a;
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s;
+}
+
+.btn-upload-continue:hover {
+  background: #f1f5f9;
+  border-color: #94a3b8;
+}
+
+/* Right status panel */
+.upload-status-panel {
+  flex: 0 0 220px;
+}
+
+.status-key {
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: #1a1a1a;
+  margin-top: 1rem;
+  margin-bottom: 0.2rem;
+}
+
+.status-key:first-of-type {
+  margin-top: 0;
+}
+
+.status-val {
+  font-size: 0.875rem;
+  color: #555;
+}
+
+/* Dashboard / Welcome Page */
+
+.dashboard-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 1.25rem;
+  max-width: 720px;
+}
+
+.dashboard-card {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  padding: 1.5rem;
+  border: 1px solid #cbd5e0;
+  border-radius: 8px;
+  text-decoration: none;
+  color: #1a1a1a;
+  background: #fff;
+  transition: background 0.15s, border-color 0.15s, box-shadow 0.15s;
+}
+
+.dashboard-card:hover {
+  background: #f8fafc;
+  border-color: #94a3b8;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+}
+
+.dashboard-card-icon {
+  font-size: 1.6rem;
+  line-height: 1;
+  color: #3182ce;
+}
+
+.dashboard-card h3 {
+  font-size: 1rem;
+  font-weight: 700;
+  margin: 0;
+}
+
+.dashboard-card p {
+  font-size: 0.85rem;
+  color: #666;
+  margin: 0;
+}
+
+/* =============================================
+   Analysis Page
+   ============================================= */
+
+.analysis-header {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  margin-bottom: 1.5rem;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.analysis-filename {
+  font-size: 0.875rem;
+  color: #777;
+}
+
+/* Two-column body: left (graph+slider+output) and right (controls) */
+.analysis-body {
+  display: flex;
+  gap: 1.25rem;
+  align-items: flex-start;
+}
+
+.analysis-left {
+  flex: 1.8;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  min-width: 0;
+}
+
+/* Shared bordered panel used across analysis page */
+.analysis-panel {
+  border: 1px solid #cbd5e0;
+  border-radius: 8px;
+  padding: 1rem 1.25rem;
+}
+
+/* Graph wrap: positions the SVG + threshold overlay */
+.analysis-graph-wrap {
+  position: relative;
+  width: 100%;
+  overflow: hidden;
+  border-radius: 4px;
+  background: #f9fafb;
+}
+
+.analysis-graph-wrap svg {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+
+/* Vertical threshold line overlay */
+.threshold-line {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 2px;
+  background: #1a1a1a;
+  left: 50%;
+  pointer-events: none;
+  transform: translateX(-50%);
+}
+
+.threshold-label {
+  font-size: 0.8rem;
+  color: #888;
+  text-align: center;
+  margin-top: 0.5rem;
+}
+
+/* Slider panel */
+.analysis-slider-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.threshold-slider {
+  width: 100%;
+  accent-color: #1a1a1a;
+  cursor: pointer;
+}
+
+/* Selected output panel */
+.analysis-output-panel {}
+
+.analysis-output-text {
+  font-size: 0.875rem;
+  color: #555;
+  margin-top: 0.25rem;
+}
+
+/* Right controls panel */
+.analysis-controls {
+  flex: 0 0 230px;
+}
+
+.ctrl-label {
+  font-size: 0.875rem;
+  font-weight: 700;
+  color: #1a1a1a;
+  margin-top: 1rem;
+  margin-bottom: 0.3rem;
+}
+
+.ctrl-label:first-of-type, .ctrl-label.cleaning-label {
+  margin-top: 1rem;
+}
+
+.ctrl-select {
+  width: 100%;
+  padding: 0.4rem 0.6rem;
+  border-radius: 6px;
+  border: 1px solid #cbd5e0;
+  font-size: 0.875rem;
+  background: #fff;
+  color: #1a1a1a;
+  outline: none;
+  transition: border-color 0.2s;
+}
+
+.ctrl-select:focus {
+  border-color: #3182ce;
+}
+
+.ctrl-notes {
+  min-height: 72px;
+}
+
+/* Dataset list on /datasets */
+.dataset-list {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+  margin-top: 0.5rem;
+}
+
+.dataset-list-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.75rem 1rem;
+  border: 1px solid #e2e8f0;
+  border-radius: 6px;
+  background: #fafafa;
+  gap: 1rem;
+}
+
+.dataset-info {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  min-width: 0;
+}
+
+.dataset-name {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: #1a1a1a;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.dataset-status {
+  font-size: 0.775rem;
+  color: #888;
+  text-transform: capitalize;
+}
+
+.dataset-analyse-btn {
+  flex-shrink: 0;
+  padding: 0.45rem 1rem;
+  font-size: 0.85rem;
+}
