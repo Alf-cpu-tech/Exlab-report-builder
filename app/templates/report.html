@@ -103,7 +103,7 @@
                class="btn btn-report-action" style="text-align:center;text-decoration:none;">
               Generate PDF
             </a>
-            <a href="{{ url_for('report_pdf', dataset_id=selected_id, inline=0) }}"
+            <a href="{{ url_for('report_bundle', dataset_id=selected_id) }}"
                id="download-btn"
                class="btn btn-report-action" style="text-align:center;text-decoration:none;">
               Download

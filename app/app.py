@@ -2,6 +2,11 @@ from flask import Flask, render_template, redirect, url_for, request, flash, ses
 from flask_sqlalchemy import SQLAlchemy
 from werkzeug.security import generate_password_hash, check_password_hash
 from werkzeug.utils import secure_filename
+from reportlab.lib.pagesizes import A4
+from reportlab.lib.units import cm
+from reportlab.lib import colors
+from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle, Image as RLImage
+from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
 import os
 import uuid
 import pandas as pd
@@ -10,11 +15,7 @@ import matplotlib.pyplot as plt
 import matplotlib
 matplotlib.use('Agg')
 import io
-from reportlab.lib.pagesizes import A4
-from reportlab.lib.units import cm
-from reportlab.lib import colors
-from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle, Image as RLImage
-from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
+import zipfile
 # Additionally requires openpyxl, figure that out for when the server is a thing
 
 # APP CONFIG
@@ -314,7 +315,7 @@ def chart(dataset_id):
     ax.set_xlabel("Time")
     ax.set_ylabel(metric)
 
-    # Save SVG to memory instead of to file (Tell Matthew at some point(optional))
+    # Save SVG to memory
     buf = io.StringIO()
     fig.savefig(buf, format="svg")
     plt.close(fig)
@@ -418,6 +419,136 @@ def report():
 
 # PDF Export
 
+def build_pdf(df, filename, username, notes):
+    pdf_buf = io.BytesIO()
+
+    doc = SimpleDocTemplate(
+        pdf_buf, pagesize=A4,
+        leftMargin=2*cm, rightMargin=2*cm,
+        topMargin=2*cm, bottomMargin=2*cm,
+    )
+
+    styles = getSampleStyleSheet()
+    title_style = ParagraphStyle('Title2', parent=styles['Heading1'], fontSize=16, spaceAfter=6)
+    sub_style   = ParagraphStyle('Sub', parent=styles['Normal'], fontSize=9, textColor=colors.grey)
+    body_style  = ParagraphStyle('Body', parent=styles['Normal'], fontSize=9)
+
+    story = []
+
+
+    # Header
+    story.append(Paragraph('ExLab Report Builder', title_style))
+    story.append(Paragraph(f'File: {filename} &nbsp;&nbsp; User: {username}', sub_style))
+    story.append(Spacer(1, 0.3*cm))
+
+
+    # Summary Table
+    n_rows = len(df)
+    t_col = df['t_seconds'] if 't_seconds' in df.columns else None
+
+    duration = "—"
+    if t_col is not None:
+        d_s = int(t_col.max() - t_col.min())
+        duration = f"{d_s // 60}m {d_s % 60}s"
+
+    phase = df['Phase'].iloc[0] if 'Phase' in df.columns else 'N/A'
+
+    summary_data = [
+        ['Filename', filename],
+        ['Phase', phase],
+        ['Breaths', str(n_rows)],
+        ['Duration', duration],
+    ]
+
+    summary_table = Table(summary_data, colWidths=[4*cm, 10*cm])
+    summary_table.setStyle(TableStyle([
+        ('FONTSIZE', (0,0), (-1,-1), 9),
+        ('FONTNAME', (0,0), (0,-1), 'Helvetica-Bold'),
+        ('TEXTCOLOR', (0,0), (0,-1), colors.HexColor('#444444')),
+        ('ROWBACKGROUNDS', (0,0), (-1,-1), [colors.HexColor('#f8f8f8'), colors.white]),
+        ('BOTTOMPADDING',(0,0), (-1,-1), 4),
+        ('TOPPADDING',  (0,0), (-1,-1), 4),
+        ('GRID', (0,0), (-1,-1), 0.3, colors.HexColor('#dddddd'))
+    ]))
+
+    story.append(summary_table)
+    story.append(Spacer(1, 0.4*cm))
+
+    # Chart
+    numeric = df.select_dtypes(include='number').columns.tolist()
+    x = df['t_seconds'] if 't_seconds' in df.columns else pd.Series(range(len(df)))
+
+    fig, ax = plt.subplots(figsize=(7, 3))
+    if "V'O2" in df.columns:
+        ax.plot(x, df["V'O2"], linewidth=1.5, label="V'O2")
+        if 'HR' in df.columns:
+            ax2 = ax.twinx()
+            ax2.plot(x, df['HR'], linewidth=1.2, color='tomato', linestyle='--')
+            ax2.set_ylabel('HR (bpm)', fontsize=8, color='tomato')
+        ax.set_ylabel("V'O2 (L/min)", fontsize=8)
+    elif numeric:
+        ax.plot(x, df[numeric[0]], linewidth=1.5)
+        ax.set_ylabel(numeric[0], fontsize=8)
+
+    ax.set_xlabel("Time (s)", fontsize=8)
+    ax.grid(color='#e0e0e0', linewidth=0.5)
+    fig.tight_layout()
+
+    img_buf = io.BytesIO()
+    fig.savefig(img_buf, format='png', dpi=120)
+    plt.close(fig)
+    img_buf.seek(0)
+
+    story.append(Paragraph("Exercise Chart", styles['Heading2']))
+    story.append(RLImage(img_buf, width=15*cm, height=6.5*cm))
+    story.append(Spacer(1, 0.4*cm))
+
+
+    # Key Statistics
+    stat_cols = ["V'O2", "HR", "RER", "V'E", "METS"]
+    present_cols = [c for c in stat_cols if c in df.columns]
+
+    if present_cols:
+        story.append(Paragraph("Key Statistics", styles['Heading2']))
+
+        rows = [['Metric', 'Max', 'Mean', 'Min']]
+        for col in present_cols:
+            rows.append([
+                col,
+                str(round(df[col].max(),  2)),
+                str(round(df[col].mean(), 2)),
+                str(round(df[col].min(),  2)),
+            ])
+
+        stats_table = Table(rows, colWidths=[4*cm, 3.5*cm, 3.5*cm, 3.5*cm])
+        stats_table.setStyle(TableStyle([
+            ('BACKGROUND', (0,0), (-1,0), colors.HexColor('#1a1a1a')),
+            ('TEXTCOLOR',  (0,0), (-1,0), colors.white),
+            ('FONTNAME',   (0,0), (-1,0), 'Helvetica-Bold'),
+            ('FONTSIZE',   (0,0), (-1,-1), 9),
+            ('ROWBACKGROUNDS', (0,1), (-1,-1), [colors.HexColor('#f8f8f8'), colors.white]),
+            ('GRID', (0,0), (-1,-1), 0.3, colors.HexColor('#dddddd')),
+            ('BOTTOMPADDING',(0,0), (-1,-1), 5),
+            ('TOPPADDING',  (0,0), (-1,-1), 5),
+        ]))
+
+        story.append(stats_table)
+        story.append(Spacer(1, 0.4*cm))
+
+
+    # Notes
+    if notes.strip():
+        story.append(Paragraph("Notes / Comments", styles['Heading2']))
+        story.append(Paragraph(notes.replace('\n', '<br/>'), body_style))
+        story.append(Spacer(1, 0.2*cm))
+
+    # Build
+    doc.build(story)
+    pdf_buf.seek(0)
+
+    return pdf_buf
+
+# PDF preview
 @app.route('/report/pdf/<int:dataset_id>')
 def report_pdf(dataset_id):
     if 'user_id' not in session:
@@ -425,7 +556,7 @@ def report_pdf(dataset_id):
 
     raw = Processed.query.filter_by(dataset_id=dataset_id).all()
     if not raw:
-        flash('No data found for that dataset.', 'danger')
+        flash('No data found.', 'danger')
         return redirect(url_for('report'))
 
     decoded = [json.loads(r.json_data) for r in raw]
@@ -435,127 +566,56 @@ def report_pdf(dataset_id):
     filename = dataset.filename if dataset else f'dataset_{dataset_id}'
     notes    = request.args.get('notes', '')
 
-    numeric = df.select_dtypes(include='number').columns.tolist()
-    x = df['t_seconds'] if 't_seconds' in df.columns else pd.Series(range(len(df)))
+    pdf_buf = build_pdf(df, filename, session["username"], notes)
 
-    fig, ax = plt.subplots(figsize=(7, 3))
-    if "V'O2" in df.columns:
-        ax.plot(x, df["V'O2"], linewidth=1.5, label="V'O2")
-        if 'HR' in df.columns:
-            ax2 = ax.twinx()
-            ax2.plot(x, df['HR'], linewidth=1.2, color='tomato', linestyle='--', label='HR')
-            ax2.set_ylabel('HR (bpm)', color='tomato', fontsize=8)
-        ax.set_ylabel("V'O2 (L/min)", fontsize=8)
-    elif numeric:
-        ax.plot(x, df[numeric[0]], linewidth=1.5)
-        ax.set_ylabel(numeric[0], fontsize=8)
-    ax.set_xlabel('Time (s)', fontsize=8)
-    ax.set_title('Exercise Data', fontsize=9)
-    ax.grid(color='#e0e0e0', linewidth=0.5)
-    fig.tight_layout()
-    img_buf = io.BytesIO()
-    fig.savefig(img_buf, format='png', dpi=120)
-    plt.close(fig)
-    img_buf.seek(0)
-
-    #Build PDF
-    pdf_buf = io.BytesIO()
-    doc = SimpleDocTemplate(
-        pdf_buf, pagesize=A4,
-        leftMargin=2*cm, rightMargin=2*cm,
-        topMargin=2*cm, bottomMargin=2*cm,
-    )
-    styles = getSampleStyleSheet()
-    title_style = ParagraphStyle('Title2', parent=styles['Heading1'], fontSize=16, spaceAfter=6)
-    sub_style   = ParagraphStyle('Sub',    parent=styles['Normal'],   fontSize=9,  textColor=colors.grey)
-    label_style = ParagraphStyle('Label',  parent=styles['Normal'],   fontSize=9,  fontName='Helvetica-Bold')
-    body_style  = ParagraphStyle('Body',   parent=styles['Normal'],   fontSize=9)
-
-    story = []
-
-    # Header
-    story.append(Paragraph('ExLab Report Builder', title_style))
-    story.append(Paragraph(f'File: {filename} &nbsp;&nbsp; User: {session["username"]}', sub_style))
-    story.append(Spacer(1, 0.3*cm))
-
-    # Session summary
-    n_rows = len(df)
-    t_col = df['t_seconds'] if 't_seconds' in df.columns else None
-    duration = '—'
-    if t_col is not None:
-        d_s = int(t_col.max() - t_col.min())
-        duration = f'{d_s // 60}m {d_s % 60}s'
-    phase = df['Phase'].iloc[0] if 'Phase' in df.columns else 'N/A'
-
-    summary_data = [
-        ['Filename', filename],
-        ['Phase',    phase],
-        ['Breaths',  str(n_rows)],
-        ['Duration', duration],
-    ]
-    summary_table = Table(summary_data, colWidths=[4*cm, 10*cm])
-    summary_table.setStyle(TableStyle([
-        ('FONTSIZE',    (0,0), (-1,-1), 9),
-        ('FONTNAME',    (0,0), (0,-1), 'Helvetica-Bold'),
-        ('TEXTCOLOR',   (0,0), (0,-1), colors.HexColor('#444444')),
-        ('ROWBACKGROUNDS', (0,0), (-1,-1), [colors.HexColor('#f8f8f8'), colors.white]),
-        ('BOTTOMPADDING',(0,0), (-1,-1), 4),
-        ('TOPPADDING',  (0,0), (-1,-1), 4),
-        ('GRID',        (0,0), (-1,-1), 0.3, colors.HexColor('#dddddd')),
-    ]))
-    story.append(summary_table)
-    story.append(Spacer(1, 0.4*cm))
-
-    # Chart
-    story.append(Paragraph('Exercise Chart', styles['Heading2']))
-    rl_img = RLImage(img_buf, width=15*cm, height=6.5*cm)
-    story.append(rl_img)
-    story.append(Spacer(1, 0.4*cm))
-
-    # Stats table
-    stat_cols = ["V'O2", 'HR', 'RER', "V'E", 'METS']
-    present   = [c for c in stat_cols if c in df.columns]
-    if present:
-        story.append(Paragraph('Key Statistics', styles['Heading2']))
-        header = ['Metric', 'Max', 'Mean', 'Min']
-        rows   = [header]
-        for col in present:
-            rows.append([
-                col,
-                str(round(df[col].max(),  2)),
-                str(round(df[col].mean(), 2)),
-                str(round(df[col].min(),  2)),
-            ])
-        stats_table = Table(rows, colWidths=[4*cm, 3.5*cm, 3.5*cm, 3.5*cm])
-        stats_table.setStyle(TableStyle([
-            ('BACKGROUND',  (0,0), (-1,0), colors.HexColor('#1a1a1a')),
-            ('TEXTCOLOR',   (0,0), (-1,0), colors.white),
-            ('FONTNAME',    (0,0), (-1,0), 'Helvetica-Bold'),
-            ('FONTSIZE',    (0,0), (-1,-1), 9),
-            ('ROWBACKGROUNDS', (0,1), (-1,-1), [colors.HexColor('#f8f8f8'), colors.white]),
-            ('GRID',        (0,0), (-1,-1), 0.3, colors.HexColor('#dddddd')),
-            ('BOTTOMPADDING',(0,0), (-1,-1), 5),
-            ('TOPPADDING',  (0,0), (-1,-1), 5),
-        ]))
-        story.append(stats_table)
-        story.append(Spacer(1, 0.4*cm))
-
-    # Notes
-    if notes.strip():
-        story.append(Paragraph('Notes / Comments', styles['Heading2']))
-        story.append(Paragraph(notes.replace('\n', '<br/>'), body_style))
-        story.append(Spacer(1, 0.2*cm))
-
-    doc.build(story)
-    pdf_buf.seek(0)
-
-    inline   = request.args.get('inline', '0') == '1'
+    inline = request.args.get('inline', '0') == '1'
     disposition = 'inline' if inline else f'attachment; filename="report_{filename}.pdf"'
-    response = make_response(pdf_buf.read())
-    response.headers['Content-Type']        = 'application/pdf'
+
+    response = make_response(pdf_buf.getvalue())
+    response.headers['Content-Type'] = 'application/pdf'
     response.headers['Content-Disposition'] = disposition
+
     return response
 
+# Download PDF + Dataset
+@app.route('/report_bundle/<int:dataset_id>')
+def report_bundle(dataset_id):
+    if 'user_id' not in session:
+        return redirect(url_for('login'))
+
+    raw = Processed.query.filter_by(dataset_id=dataset_id).all()
+    if not raw:
+        flash('No data found.', 'danger')
+        return redirect(url_for('report'))
+
+    decoded = [json.loads(r.json_data) for r in raw]
+    df = pd.DataFrame(decoded)
+
+    dataset = Dataset.query.get(dataset_id)
+    filename = dataset.filename if dataset else f'dataset_{dataset_id}'
+    notes = request.args.get('notes','')
+
+    pdf_buf = build_pdf(df, filename, session["username"], notes)
+
+    # Create ZIP
+    zip_buf = io.BytesIO()
+    with zipfile.ZipFile(zip_buf, 'w', zipfile.ZIP_DEFLATED) as zf:
+        # PDF
+        zf.writestr(f"report_{filename}.pdf", pdf_buf.getvalue())
+
+        # CSV
+        csv_buf = io.StringIO()
+        df.to_csv(csv_buf, index=False)
+        zf.writestr(f"dataset_{filename}.csv", csv_buf.getvalue())
+
+    zip_buf.seek(0)
+
+    response = make_response(zip_buf.read())
+    response.headers['Content-Type'] = 'application/zip'
+    response.headers['Content-Disposition'] = (
+        f'attachment; filename="report_bundle_{filename}.zip"'
+    )
+    return response
 
 # MAIN
 
