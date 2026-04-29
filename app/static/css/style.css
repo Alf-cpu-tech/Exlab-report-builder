@@ -840,3 +840,35 @@ button[disabled].btn-report-action {
   padding: 0.45rem 1rem;
   font-size: 0.85rem;
 }
+
+.dataset-action-btn {
+  padding: 0.45rem 1rem;
+  border-radius: 6px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  border: none;
+  transition: opacity 0.2s;
+  text-decoration: none;
+  display: inline-block;
+}
+
+.dataset-action-btn:hover {
+  opacity: 0.85;
+}
+
+.dataset-action-btn.analyse {
+  background: #3182ce;
+  color: #ffffff;
+}
+
+.dataset-action-btn.remove {
+  background: #e53e3e;
+  color: #ffffff;
+}
+
+.dataset-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;   
+}

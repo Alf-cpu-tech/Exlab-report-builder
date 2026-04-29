@@ -30,7 +30,14 @@
                 <span class="dataset-name">{{ d.filename }}</span>
                 <span class="dataset-status">{{ d.status }}</span>
               </div>
-              <a href="{{ url_for('chart', dataset_id=d.id) }}" class="btn btn-report-action dataset-analyse-btn">Analyse</a>
+<!-- Analyse Button -->
+              <div class="dataset-actions">
+                <a href="{{ url_for('chart', dataset_id=d.id) }}" class="dataset-action-btn analyse">Analyse</a>
+<!-- Remove button -->
+                <form action="{{ url_for('delete_dataset', dataset_id=d.id) }}" method="post" style="display:inline;">
+                  <button type="submit" class="btn dataset-action-btn remove">Remove</button>
+                </form>
+              </div>
             </li>
           {% endfor %}
         </ul>
@@ -38,6 +45,7 @@
         <p style="color:#777; font-size:0.9rem;">No datasets uploaded yet.
           <a href="{{ url_for('upload') }}" style="color:#3182ce;">Upload one now.</a>
         </p>
+
       {% endif %}
     </div>
   </main>

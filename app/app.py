@@ -617,6 +617,14 @@ def report_bundle(dataset_id):
     )
     return response
 
+
+@app.route('/delete/<int:dataset_id>', methods=['POST'])
+def delete_dataset(dataset_id):
+    dataset = Dataset.query.get_or_404(dataset_id)
+    db.session.delete(dataset)
+    db.session.commit()
+    return redirect(url_for('datasets'))
+
 # MAIN
 
 if __name__ == '__main__':
