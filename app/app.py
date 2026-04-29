@@ -242,11 +242,7 @@ def upload():
         flash(f"Error processing file: {e}", "danger")
         return redirect(url_for("upload"))
 
-    return redirect(url_for('upload_success'))
-
-@app.route('/upload/success')
-def upload_success():
-    return render_template('upload_success.html')
+    return redirect(url_for('upload', success=1))
 
 # Dataset List
 

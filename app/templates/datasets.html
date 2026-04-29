@@ -32,7 +32,9 @@
               </div>
 <!-- Analyse Button -->
               <div class="dataset-actions">
-                <a href="{{ url_for('chart', dataset_id=d.id) }}" class="dataset-action-btn analyse">Analyse</a>
+                <form action="{{ url_for('chart', dataset_id=d.id) }}" method="get">
+                  <button class="dataset-action-btn analyse">Analyse</button>
+                </form>
 <!-- Remove button -->
                 <form action="{{ url_for('delete_dataset', dataset_id=d.id) }}" method="post" style="display:inline;">
                   <button type="submit" class="btn dataset-action-btn remove">Remove</button>
