@@ -5,7 +5,7 @@ import os
 
 
 # Read the data from the Excel file
-dirtyData = pd.read_excel("Copy of CPET_DM01__Max Breath by Breath_class.xlsx")
+
 
 def replace_far_away_values(df, column_name="V'O2", n=3):
     """
@@ -33,21 +33,11 @@ def replace_far_away_values(df, column_name="V'O2", n=3):
     
     # Interpolate the missing values
     df[column_name].interpolate(method='linear', inplace=True)
-    
+    print("cleaning successfull")
     return df
 
 # Apply the function to replace outliers in the 'V'O2' column
-cleanData = replace_far_away_values(dirtyData, "V'O2")
-
-print(cleanData)
-
-pd.set_option("display.max_rows", 30)
-pd.set_option("display.max_columns", 10)
-print(cleanData)
-try:
-    os.remove("output.csv")
-except: 
-    pass
 
 
-cleanData.to_csv('output.csv', index=False, )
+if __name__ == "__main__":
+    replace_far_away_values(df, "V'O2", n=3)

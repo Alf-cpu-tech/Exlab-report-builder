@@ -16,6 +16,9 @@ import matplotlib
 matplotlib.use('Agg')
 import io
 import zipfile
+import sys
+sys.path.append("../") 
+from data_cleaning import replace_far_away_values
 # Additionally requires openpyxl, figure that out for when the server is a thing
 
 # APP CONFIG
@@ -112,7 +115,7 @@ def read_any_spreadsheet(path):
 def process_dataset(path, dataset_id):
     """Convert uploaded raw spreadsheet into many JSON rows."""
     df = read_any_spreadsheet(path)
-
+    df = replace_far_away_values(df, "V'O2", n=3)
     # Add Logging
     print("\nRAW HEAD")
     print(df.head())
