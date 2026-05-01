@@ -19,7 +19,7 @@ import zipfile
 import sys
 sys.path.append("../") 
 from data_cleaning import replace_far_away_values
-# Additionally requires openpyxl, figure that out for when the server is a thing
+# Additionally requires pip install openpyxl
 
 # APP CONFIG
 
