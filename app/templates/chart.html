@@ -61,16 +61,15 @@
         <h2 class="panel-box-title">Controls</h2>
 
         <form method="GET" id="controls-form">
-          <p class="ctrl-label">Variable 1:</p>
+          <p class="ctrl-label">X axis:</p>
           <select name="metric" class="ctrl-select" onchange="this.form.submit()">
             {% for m in metrics %}
               <option value="{{ m }}" {% if m == selected %}selected{% endif %}>{{ m }}</option>
             {% endfor %}
           </select>
 
-          <p class="ctrl-label">Variable 2:</p>
+          <p class="ctrl-label">Y axis:</p>
           <select name="metric2" class="ctrl-select" onchange="this.form.submit()">
-            <option value="">— none —</option>
             {% for m in metrics %}
               <option value="{{ m }}" {% if m == selected2 %}selected{% endif %}>{{ m }}</option>
             {% endfor %}
@@ -88,7 +87,11 @@
 
           <div class="report-actions" style="margin-top:1rem;">
             <button type="submit" name="action" value="save" class="btn btn-report-action">Save</button>
-            <a href="{{ url_for('report', dataset_id=dataset_id) }}" class="btn btn-report-action" style="text-align:center;text-decoration:none;">Report</a>
+            <a href="{{ url_for('report', dataset_id=dataset_id, metric=selected, metric2=selected2) }}"
+              class="btn btn-report-action"
+              style="text-align:center;text-decoration:none;">
+              Report
+            </a>
           </div>
         </form>
       </aside>
@@ -116,7 +119,7 @@
     label.textContent = 'Selected threshold: ' + tVal + '%';
     const v1 = v1El ? v1El.options[v1El.selectedIndex].text : '—';
     const v2 = v2El && v2El.value ? v2El.options[v2El.selectedIndex].text : '—';
-    output.textContent = 'Variable 1: ' + v1 + ' | Variable 2: ' + v2 + ' | Threshold: ' + tVal + '%';
+    output.textContent = 'X axis: ' + v1 + ' | Y axis: ' + v2 + ' | Threshold: ' + tVal + '%';
   }
 
   slider.addEventListener('input', updateLine);

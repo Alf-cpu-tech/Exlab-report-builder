@@ -98,12 +98,12 @@
 
         <div class="report-actions">
           {% if selected_id %}
-            <a href="{{ url_for('report_pdf', dataset_id=selected_id, inline=1) }}"
+            <a href="{{ url_for('report_pdf', dataset_id=selected_id, inline=1, metric=selected, metric2=selected2) }}"
                target="_blank"
                class="btn btn-report-action" style="text-align:center;text-decoration:none;">
               Generate PDF
             </a>
-            <a href="{{ url_for('report_bundle', dataset_id=selected_id) }}"
+            <a href="{{ url_for('report_bundle', dataset_id=selected_id, metric=selected, metric2=selected2) }}"
                id="download-btn"
                class="btn btn-report-action" style="text-align:center;text-decoration:none;">
               Download
@@ -130,7 +130,7 @@
 <script>
   // Keep the PDF links updated with whatever notes the user has typed
   const notesTA    = document.querySelector('.notes-textarea');
-  const pdfLinks   = document.querySelectorAll('a[href*="/report/pdf/"]');
+  const pdfLinks = document.querySelectorAll('a[href*="/report/pdf/"], a[href*="/report_bundle/"]');
 
   function updateNoteLinks() {
     if (!notesTA || !pdfLinks.length) return;

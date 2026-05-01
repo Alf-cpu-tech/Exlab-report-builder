@@ -277,32 +277,25 @@ def chart(dataset_id):
     if not numeric:
         return "No numeric data to plot", 400
 
-    metric  = request.args.get("metric",  numeric[0])
-    metric2 = request.args.get("metric2", "")
     clean   = request.args.get("clean",   False)
     notes   = request.args.get("notes",   "")
 
-    if metric not in numeric:
-        metric = numeric[0]
+    x_metric = request.args.get("metric", "t_seconds" if "t_seconds" in numeric else numeric[0])
+    y_metric = request.args.get("metric2", numeric[1] if len(numeric) > 1 else numeric[0])
 
-    # X-axis
-    if "t_seconds" in df.columns:
-        x = df["t_seconds"]
-    else:
-        x = df.index
+    if x_metric not in numeric:
+        x_metric = "t_seconds" if "t_seconds" in numeric else numeric[0]
+
+    if y_metric not in numeric:
+        y_metric = numeric[1] if len(numeric) > 1 else numeric[0]
 
     # Make chart
     fig, ax = plt.subplots(figsize=(8, 4))
 
     # Compatibility with CSS
-    line, = ax.plot(x, df[metric], marker='o')
+    line, = ax.plot(df[x_metric], df[y_metric], marker='o')
     line.set_gid("mpl-line")
     line.set_markerfacecolor("none")
-
-    if metric2 and metric2 in numeric:
-        line2, = ax.plot(x, df[metric2], marker='s', linestyle='--')
-        line2.set_gid("mpl-line2")
-        line2.set_markerfacecolor("none")
 
     ax.grid(color="#e0e0e0")
     for spine in ax.spines.values():
@@ -310,9 +303,9 @@ def chart(dataset_id):
         spine.set_linewidth(1)
 
     # Titles, labels
-    ax.set_title(f"{metric} over time")
-    ax.set_xlabel("Time")
-    ax.set_ylabel(metric)
+    ax.set_title(f"{y_metric} against {x_metric}")
+    ax.set_xlabel(x_metric)
+    ax.set_ylabel(y_metric)
 
     # Save SVG to memory
     buf = io.StringIO()
@@ -328,8 +321,8 @@ def chart(dataset_id):
         "chart.html",
         svg=svg,
         metrics=numeric,
-        selected=metric,
-        selected2=metric2,
+        selected=x_metric,
+        selected2=y_metric,
         clean=bool(clean),
         notes=notes,
         dataset_id=dataset_id,
@@ -350,6 +343,9 @@ def report():
     summary = None
     filename = None
     stats = None
+    numeric = []
+    x_metric = None
+    y_metric = None
 
     if dataset_id:
         raw = Processed.query.filter_by(dataset_id=dataset_id).all()
@@ -360,27 +356,46 @@ def report():
             dataset = Dataset.query.get(dataset_id)
             filename = dataset.filename if dataset else f"dataset_{dataset_id}"
 
-            # Build preview SVG (small, clean)
+            # Numeric columns available for graphing
             numeric = df.select_dtypes(include='number').columns.tolist()
-            x = df['t_seconds'] if 't_seconds' in df.columns else pd.Series(range(len(df)))
 
-            fig, ax = plt.subplots(figsize=(6, 3))
-            if "V'O2" in df.columns:
-                ax.plot(x, df["V'O2"], linewidth=1.5)
-                ax.set_ylabel("V'O2 (L/min)")
-            elif numeric:
-                ax.plot(x, df[numeric[0]], linewidth=1.5)
-                ax.set_ylabel(numeric[0])
-            ax.set_xlabel("Time (s)")
-            ax.grid(color="#e0e0e0", linewidth=0.5)
-            ax.set_title("Exercise Data Preview")
-            for spine in ax.spines.values():
-                spine.set_linewidth(0.8)
-            fig.tight_layout()
-            buf = io.StringIO()
-            fig.savefig(buf, format='svg')
-            plt.close(fig)
-            svg = buf.getvalue()
+            if numeric:
+                # Get selected X/Y values from URL
+                x_metric = request.args.get(
+                    "metric",
+                    "t_seconds" if "t_seconds" in numeric else numeric[0]
+                )
+
+                y_metric = request.args.get(
+                    "metric2",
+                    numeric[1] if len(numeric) > 1 else numeric[0]
+                )
+
+                # Safety fallback
+                if x_metric not in numeric:
+                    x_metric = "t_seconds" if "t_seconds" in numeric else numeric[0]
+
+                if y_metric not in numeric:
+                    y_metric = numeric[1] if len(numeric) > 1 else numeric[0]
+
+                # Build preview SVG
+                fig, ax = plt.subplots(figsize=(6, 3))
+                ax.plot(df[x_metric], df[y_metric], linewidth=1.5, marker='o')
+
+                ax.set_xlabel(x_metric)
+                ax.set_ylabel(y_metric)
+                ax.set_title(f"{y_metric} against {x_metric}")
+
+                ax.grid(color="#e0e0e0", linewidth=0.5)
+
+                for spine in ax.spines.values():
+                    spine.set_linewidth(0.8)
+
+                fig.tight_layout()
+                buf = io.StringIO()
+                fig.savefig(buf, format='svg')
+                plt.close(fig)
+                svg = buf.getvalue()
 
             # Key stats
             stat_cols = ["V'O2", "HR", "RER", "V'E", "METS"]
@@ -396,6 +411,7 @@ def report():
             n_rows = len(df)
             t_col = df['t_seconds'] if 't_seconds' in df.columns else None
             duration = None
+
             if t_col is not None:
                 duration_s = int(t_col.max() - t_col.min())
                 duration = f"{duration_s // 60}m {duration_s % 60}s"
@@ -407,18 +423,21 @@ def report():
                 'phase': df['Phase'].iloc[0] if 'Phase' in df.columns else 'N/A',
             }
 
-    return render_template('report.html',
+    return render_template(
+        'report.html',
         svg=svg,
         summary=summary,
         stats=stats,
         datasets=user_datasets,
         selected_id=dataset_id,
+        metrics=numeric,
+        selected=x_metric,
+        selected2=y_metric
     )
-
 
 # PDF Export
 
-def build_pdf(df, filename, username, notes):
+def build_pdf(df, filename, username, notes, x_metric=None, y_metric=None):
     pdf_buf = io.BytesIO()
 
     doc = SimpleDocTemplate(
@@ -475,21 +494,18 @@ def build_pdf(df, filename, username, notes):
 
     # Chart
     numeric = df.select_dtypes(include='number').columns.tolist()
-    x = df['t_seconds'] if 't_seconds' in df.columns else pd.Series(range(len(df)))
+
+    if not x_metric or x_metric not in numeric:
+        x_metric = "t_seconds" if "t_seconds" in numeric else numeric[0]
+
+    if not y_metric or y_metric not in numeric:
+        y_metric = numeric[1] if len(numeric) > 1 else numeric[0]
 
     fig, ax = plt.subplots(figsize=(7, 3))
-    if "V'O2" in df.columns:
-        ax.plot(x, df["V'O2"], linewidth=1.5, label="V'O2")
-        if 'HR' in df.columns:
-            ax2 = ax.twinx()
-            ax2.plot(x, df['HR'], linewidth=1.2, color='tomato', linestyle='--')
-            ax2.set_ylabel('HR (bpm)', fontsize=8, color='tomato')
-        ax.set_ylabel("V'O2 (L/min)", fontsize=8)
-    elif numeric:
-        ax.plot(x, df[numeric[0]], linewidth=1.5)
-        ax.set_ylabel(numeric[0], fontsize=8)
-
-    ax.set_xlabel("Time (s)", fontsize=8)
+    ax.plot(df[x_metric], df[y_metric], linewidth=1.5, marker='o')
+    ax.set_xlabel(x_metric, fontsize=8)
+    ax.set_ylabel(y_metric, fontsize=8)
+    ax.set_title(f"{y_metric} against {x_metric}", fontsize=10)
     ax.grid(color='#e0e0e0', linewidth=0.5)
     fig.tight_layout()
 
@@ -565,7 +581,10 @@ def report_pdf(dataset_id):
     filename = dataset.filename if dataset else f'dataset_{dataset_id}'
     notes    = request.args.get('notes', '')
 
-    pdf_buf = build_pdf(df, filename, session["username"], notes)
+    x_metric = request.args.get("metric", None)
+    y_metric = request.args.get("metric2", None)
+
+    pdf_buf = build_pdf(df, filename, session["username"], notes, x_metric, y_metric)
 
     inline = request.args.get('inline', '0') == '1'
     disposition = 'inline' if inline else f'attachment; filename="report_{filename}.pdf"'
@@ -594,7 +613,10 @@ def report_bundle(dataset_id):
     filename = dataset.filename if dataset else f'dataset_{dataset_id}'
     notes = request.args.get('notes','')
 
-    pdf_buf = build_pdf(df, filename, session["username"], notes)
+    x_metric = request.args.get("metric", None)
+    y_metric = request.args.get("metric2", None)
+
+    pdf_buf = build_pdf(df, filename, session["username"], notes, x_metric, y_metric)
 
     # Create ZIP
     zip_buf = io.BytesIO()
